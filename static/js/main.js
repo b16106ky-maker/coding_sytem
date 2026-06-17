@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const todoForm = document.getElementById('todo-form');
     const todoInput = document.getElementById('todo-input');
     const todoDue = document.getElementById('todo-due');
+    const todoPriority = document.getElementById('todo-priority');
     const todoSort = document.getElementById('todo-sort');
     const todoList = document.getElementById('todo-list');
     const taskCounter = document.getElementById('task-counter');
@@ -71,7 +72,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const dueDisplay = hasDue ? `<span class="todo-due-date">${formatDueDate(todo.due_time)}</span>` : '';
             const countdownDisplay = hasDue ? `<div class="todo-countdown" data-deadline="${todo.due_time}" data-completed="${todo.completed}"></div>` : '';
 
-            // HTML content with custom double line logic
+            // Format priority badge
+            const priority = todo.priority || 'medium';
+            let priorityBadge = '';
+            if (priority === 'high') {
+                priorityBadge = `<span class="priority-badge priority-high">🔥 高</span>`;
+            } else if (priority === 'medium') {
+                priorityBadge = `<span class="priority-badge priority-medium">⚡ 中</span>`;
+            } else if (priority === 'low') {
+                priorityBadge = `<span class="priority-badge priority-low">☕ 低</span>`;
+            }
+
+            // HTML content with custom double line logic and priority row
             li.innerHTML = `
                 <div class="todo-content">
                     <div class="todo-checkbox">
@@ -80,7 +92,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         </svg>
                     </div>
                     <div class="todo-text-container">
-                        <span class="todo-text">${escapeHtml(todo.title)}</span>
+                        <div class="todo-title-row">
+                            <span class="todo-text">${escapeHtml(todo.title)}</span>
+                            ${priorityBadge}
+                        </div>
                         ${dueDisplay}
                     </div>
                 </div>
@@ -112,6 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
         const title = todoInput.value.trim();
         const due_time = todoDue.value ? todoDue.value : null;
+        const priority = todoPriority.value || 'medium';
         if (!title) return;
 
         try {
@@ -120,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ title, due_time })
+                body: JSON.stringify({ title, due_time, priority })
             });
 
             if (!response.ok) throw new Error('Failed to add todo');
@@ -130,6 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
             renderTodos();
             todoInput.value = '';
             todoDue.value = '';
+            todoPriority.value = 'medium';
             todoInput.focus();
         } catch (error) {
             console.error('Error adding todo:', error);

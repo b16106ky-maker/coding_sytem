@@ -45,15 +45,25 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Apply sorting (Newest first / Input order)
+        // Apply sorting (Newest first / Input order, but completed items always at the bottom)
         const sortValue = todoSort.value;
         let sortedTodos = [...todos];
         if (sortValue === 'newest') {
-            // Newest first (descending ID)
-            sortedTodos.sort((a, b) => b.id - a.id);
+            // Newest first (descending ID), but incomplete tasks stay at the top
+            sortedTodos.sort((a, b) => {
+                if (a.completed !== b.completed) {
+                    return a.completed ? 1 : -1;
+                }
+                return b.id - a.id;
+            });
         } else if (sortValue === 'oldest') {
-            // Input order (ascending ID)
-            sortedTodos.sort((a, b) => a.id - b.id);
+            // Input order (ascending ID), but incomplete tasks stay at the top
+            sortedTodos.sort((a, b) => {
+                if (a.completed !== b.completed) {
+                    return a.completed ? 1 : -1;
+                }
+                return a.id - b.id;
+            });
         }
 
         sortedTodos.forEach(todo => {
@@ -76,11 +86,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const priority = todo.priority || 'medium';
             let priorityBadge = '';
             if (priority === 'high') {
-                priorityBadge = `<span class="priority-badge priority-high">🔥 高</span>`;
+                priorityBadge = `<span class="priority-badge priority-high">📌 高</span>`;
             } else if (priority === 'medium') {
-                priorityBadge = `<span class="priority-badge priority-medium">⚡ 中</span>`;
+                priorityBadge = `<span class="priority-badge priority-medium">✨ 中</span>`;
             } else if (priority === 'low') {
-                priorityBadge = `<span class="priority-badge priority-low">☕ 低</span>`;
+                priorityBadge = `<span class="priority-badge priority-low">🍃 低</span>`;
             }
 
             // HTML content with custom double line logic and priority row
@@ -171,6 +181,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (index !== -1) {
                 todos[index].completed = !currentCompleted;
                 renderTodos();
+
+                // Trigger fullscreen celebration if the todo was just checked off (completed)
+                if (!currentCompleted) {
+                    triggerCelebration();
+                }
             }
         } catch (error) {
             console.error('Error toggling todo:', error);
@@ -281,6 +296,84 @@ document.addEventListener('DOMContentLoaded', () => {
     todoSort.addEventListener('change', () => {
         renderTodos();
     });
+
+    // Lists of warm messages and cute emojis for celebration
+    const celebrationMessages = [
+        "お疲れ様です！✨",
+        "よくできました！👏",
+        "ナイス！🎉",
+        "素晴らしい！🌟",
+        "その調子です！👍",
+        "完了です！🧸"
+    ];
+    const celebrationEmojis = ["🎉", "🥳", "✨", "🏆", "🌟", "🌸", "🎈"];
+
+    // Creates and animates fullscreen celebration popup and confetti burst
+    function triggerCelebration() {
+        // Create celebration overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'celebration-overlay';
+        
+        const content = document.createElement('div');
+        content.className = 'celebration-content';
+        
+        const emoji = document.createElement('div');
+        emoji.className = 'celebration-emoji';
+        emoji.textContent = celebrationEmojis[Math.floor(Math.random() * celebrationEmojis.length)];
+        
+        const text = document.createElement('div');
+        text.className = 'celebration-text';
+        text.textContent = celebrationMessages[Math.floor(Math.random() * celebrationMessages.length)];
+        
+        content.appendChild(emoji);
+        content.appendChild(text);
+        overlay.appendChild(content);
+        document.body.appendChild(overlay);
+        
+        // Spawn Confetti particles
+        const particleCount = 80;
+        const colors = ['#6caec4', '#9ec8d9', '#e09f68', '#dd7a5f', '#81b29a', '#b1a7d6'];
+        
+        for (let i = 0; i < particleCount; i++) {
+            const p = document.createElement('div');
+            p.className = 'confetti-particle';
+            
+            // 50% chance to be square or circle particle
+            if (Math.random() > 0.5) {
+                p.style.borderRadius = '0';
+            }
+            
+            const size = Math.random() * 8 + 6; // random size: 6px to 14px
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            
+            p.style.width = `${size}px`;
+            p.style.height = `${size}px`;
+            p.style.backgroundColor = color;
+            
+            // Spawn particle in the center of the viewport
+            p.style.left = '50vw';
+            p.style.top = '50vh';
+            
+            // Generate random angle, distance, rotation direction
+            const angle = Math.random() * Math.PI * 2;
+            const distance = Math.random() * 300 + 100; // random radius
+            const tx = Math.cos(angle) * distance;
+            const ty = Math.sin(angle) * distance;
+            const rot = Math.random() * 720 - 360;
+            
+            p.style.setProperty('--tx', `${tx}px`);
+            p.style.setProperty('--ty', `${ty}px`);
+            p.style.setProperty('--rot', `${rot}deg`);
+            
+            document.body.appendChild(p);
+            
+            // Remove particle after animation completes
+            setTimeout(() => p.remove(), 1200);
+        }
+        
+        // Clean up overlay after animation completes
+        setTimeout(() => overlay.remove(), 1500);
+    }
 
     // Initial Fetch
     fetchTodos();

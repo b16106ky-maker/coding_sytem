@@ -10,9 +10,16 @@ def init_db():
             CREATE TABLE IF NOT EXISTS todos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 title TEXT NOT NULL,
-                completed INTEGER DEFAULT 0
+                completed INTEGER DEFAULT 0,
+                due_time TEXT
             )
         """)
+        # Dynamically add due_time column if it doesn't exist in existing DB
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA table_info(todos)")
+        columns = [row[1] for row in cursor.fetchall()]
+        if "due_time" not in columns:
+            cursor.execute("ALTER TABLE todos ADD COLUMN due_time TEXT")
         conn.commit()
 
 @app.route("/")
@@ -24,7 +31,7 @@ def get_todos():
     with sqlite3.connect(DB_FILE) as conn:
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
-        cursor.execute("SELECT id, title, completed FROM todos ORDER BY id DESC")
+        cursor.execute("SELECT id, title, completed, due_time FROM todos ORDER BY id DESC")
         todos = [dict(row) for row in cursor.fetchall()]
         # Convert completed integer to boolean for frontend ease
         for todo in todos:
@@ -38,13 +45,19 @@ def add_todo():
         return jsonify({"error": "Title is required"}), 400
     
     title = data["title"].strip()
+    due_time = data.get("due_time")
+    if due_time:
+        due_time = due_time.strip()
+    else:
+        due_time = None
+        
     with sqlite3.connect(DB_FILE) as conn:
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO todos (title, completed) VALUES (?, 0)", (title,))
+        cursor.execute("INSERT INTO todos (title, completed, due_time) VALUES (?, 0, ?)", (title, due_time))
         conn.commit()
         new_id = cursor.lastrowid
         
-    return jsonify({"id": new_id, "title": title, "completed": False}), 201
+    return jsonify({"id": new_id, "title": title, "completed": False, "due_time": due_time}), 201
 
 @app.route("/api/todos/<int:todo_id>", methods=["PUT"])
 def update_todo(todo_id):

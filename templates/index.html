@@ -37,6 +37,12 @@
                     autocomplete="off"
                     required
                 >
+                <input 
+                    type="datetime-local" 
+                    id="todo-due"
+                    class="todo-due-input"
+                    title="期限日時を設定（任意）"
+                >
                 <button type="submit" id="add-btn" aria-label="タスクを追加">
                     <span class="btn-text">追加</span>
                     <span class="btn-icon">
@@ -49,8 +55,17 @@
 
             <!-- Todo Status Info -->
             <div class="todo-status">
-                <span id="task-counter">タスク: 0 件</span>
-                <span id="completed-counter">完了: 0 件</span>
+                <div class="status-counters">
+                    <span id="task-counter">タスク: 0 件</span>
+                    <span id="completed-counter">完了: 0 件</span>
+                </div>
+                <div class="todo-sort-container">
+                    <label for="todo-sort" class="sort-label">並び替え:</label>
+                    <select id="todo-sort" class="sort-select">
+                        <option value="newest">新しい順</option>
+                        <option value="oldest">入力した順</option>
+                    </select>
+                </div>
             </div>
 
             <!-- Todo List -->
